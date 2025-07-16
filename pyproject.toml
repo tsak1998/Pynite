@@ -1,0 +1,16 @@
+[project]
+name = "pynite"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "ipywidgets>=8.1.7",
+    "matplotlib>=3.10.3",
+    "numpy>=2.3.1",
+    "prettytable>=3.16.0",
+    "pytest>=8.4.1",
+    "pyvista[all,trame]>=0.45.2",
+    "scipy>=1.16.0",
+    "trame-jupyter-extension>=2.1.4",
+]
