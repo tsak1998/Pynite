@@ -8,7 +8,8 @@ to PyNite format and run structural analysis.
 from typing import Dict, List, Optional
 import numpy as np
 from Pynite import FEModel3D
-from aidea_model import Model, Node, Member, Material, Section, Plate, Support, PointLoad, DistributedLoad, Pressure
+from Pynite.ShearWall import ShearWall
+from aidea_model import Model, Node, Member, Material, Section, Plate, Support, PointLoad, DistributedLoad, Pressure, ShearWall as AideaShearWall
 
 
 class AideaToPyniteTranslator:
@@ -17,6 +18,7 @@ class AideaToPyniteTranslator:
     def __init__(self):
         self.pynite_model: Optional[FEModel3D] = None
         self.aidea_model: Optional[Model] = None
+        self.shear_walls: Dict[str, ShearWall] = {}
         
     def translate_model(self, aidea_model: Model) -> FEModel3D:
         """
@@ -31,7 +33,7 @@ class AideaToPyniteTranslator:
         self.aidea_model = aidea_model
         self.pynite_model = FEModel3D()
         
-        # Translate in order: materials, sections, nodes, supports, members, plates, loads
+        # Translate in order: materials, sections, nodes, supports, members, plates, loads, shear walls
         self._translate_materials()
         self._translate_sections()
         self._translate_nodes()
@@ -40,6 +42,7 @@ class AideaToPyniteTranslator:
         self._translate_plates()
         self._translate_loads()
         self._translate_load_combinations()
+        self._translate_shear_walls()
         
         return self.pynite_model
     
@@ -467,5 +470,184 @@ class AideaToPyniteTranslator:
                             'RxnMY': node.RxnMY.get(combo, 0),
                             'RxnMZ': node.RxnMZ.get(combo, 0)
                         }
+        
+        return results
+    
+    def _translate_shear_walls(self):
+        """Translate shear walls from AIDEA to PyNite format."""
+        for wall_id, aidea_wall in self.aidea_model.shear_walls.items():
+            # Create a new PyNite ShearWall object
+            pynite_wall = ShearWall()
+            
+            # Set basic wall properties
+            pynite_wall.L = aidea_wall.length
+            pynite_wall.H = aidea_wall.height
+            pynite_wall.mesh_size = aidea_wall.mesh_size
+            pynite_wall.ky_mod = aidea_wall.ky_modification_factor
+            
+            # Add materials to the wall
+            for material in aidea_wall.materials:
+                pynite_wall.add_material(
+                    name=material.name,
+                    E=material.elasticity_modulus,
+                    G=material.shear_modulus,
+                    nu=material.poissons_ratio,
+                    rho=material.density,
+                    t=material.thickness,
+                    x_start=material.x_start,
+                    x_end=material.x_end,
+                    y_start=material.y_start,
+                    y_end=material.y_end
+                )
+            
+            # Add openings to the wall
+            for opening in aidea_wall.openings:
+                pynite_wall.add_opening(
+                    name=opening.name,
+                    x_start=opening.x_start,
+                    y_start=opening.y_start,
+                    width=opening.width,
+                    height=opening.height,
+                    tie=opening.tie_stiffness
+                )
+            
+            # Add flanges to the wall
+            for flange in aidea_wall.flanges:
+                pynite_wall.add_flange(
+                    thickness=flange.thickness,
+                    width=flange.width,
+                    x=flange.x_position,
+                    y_start=flange.y_start,
+                    y_end=flange.y_end,
+                    material=flange.material_name,
+                    side=flange.side
+                )
+            
+            # Add supports to the wall
+            for support in aidea_wall.supports:
+                pynite_wall.add_support(
+                    elevation=support.elevation,
+                    x_start=support.x_start,
+                    x_end=support.x_end
+                )
+            
+            # Add stories to the wall
+            for story in aidea_wall.stories:
+                pynite_wall.add_story(
+                    story_name=story.story_name,
+                    elevation=story.elevation,
+                    x_start=story.x_start,
+                    x_end=story.x_end
+                )
+            
+            # Add loads to the wall
+            for load in aidea_wall.loads:
+                if load.load_type == "shear":
+                    pynite_wall.add_shear(
+                        story_name=load.story_name,
+                        force=load.force_magnitude,
+                        case=load.load_group
+                    )
+                elif load.load_type == "axial":
+                    pynite_wall.add_axial(
+                        story_name=load.story_name,
+                        force=load.force_magnitude,
+                        case=load.load_group
+                    )
+            
+            # Store the shear wall for later analysis
+            self.shear_walls[wall_id] = pynite_wall
+    
+    def analyze_shear_walls(self, **kwargs):
+        """
+        Analyze all shear walls in the model.
+        
+        Args:
+            **kwargs: Additional arguments for shear wall analysis
+        """
+        for wall_id, wall in self.shear_walls.items():
+            print(f"Analyzing shear wall: {wall_id}")
+            
+            # Generate the wall mesh and model
+            wall.generate()
+            
+            # Analyze the wall
+            wall.model.analyze_linear(**kwargs)
+            
+            print(f"Shear wall {wall_id} analysis complete")
+    
+    def get_shear_wall_results(self, wall_id: str, combo_name: str = 'Combo 1') -> Dict:
+        """
+        Get results for a specific shear wall.
+        
+        Args:
+            wall_id: ID of the shear wall
+            combo_name: Load combination name
+            
+        Returns:
+            Dictionary containing shear wall results
+        """
+        if wall_id not in self.shear_walls:
+            raise ValueError(f"Shear wall {wall_id} not found")
+        
+        wall = self.shear_walls[wall_id]
+        
+        results = {
+            'wall_id': wall_id,
+            'wall_length': wall.L,
+            'wall_height': wall.H,
+            'piers': {},
+            'coupling_beams': {},
+            'story_stiffness': {}
+        }
+        
+        # Get pier results
+        for pier_id, pier in wall.piers.items():
+            P, M, V, M_VL = pier.sum_forces(combo_name)
+            results['piers'][pier_id] = {
+                'pier_id': pier_id,
+                'x_position': pier.x,
+                'y_position': pier.y,
+                'width': pier.width,
+                'height': pier.height,
+                'axial_force': P,
+                'shear_force': V,
+                'moment': M,
+                'shear_span_ratio': M_VL
+            }
+        
+        # Get coupling beam results
+        for beam_id, beam in wall.coupling_beams.items():
+            P, M, V, M_VH = beam.sum_forces(combo_name)
+            results['coupling_beams'][beam_id] = {
+                'beam_id': beam_id,
+                'x_position': beam.x,
+                'y_position': beam.y,
+                'length': beam.length,
+                'height': beam.height,
+                'axial_force': P,
+                'shear_force': V,
+                'moment': M,
+                'shear_span_ratio': M_VH
+            }
+        
+        # Get story stiffness results
+        for story in wall._stories:
+            story_name = str(story[0])  # Ensure story_name is a string
+            try:
+                stiffness_value = wall.stiffness(story_name)
+                results['story_stiffness'][story_name] = {
+                    'story_name': story_name,
+                    'stiffness': stiffness_value,
+                    'test_force': 100.0,
+                    'max_displacement': 100.0 / stiffness_value if stiffness_value > 0 else 0.0
+                }
+            except:
+                results['story_stiffness'][story_name] = {
+                    'story_name': story_name,
+                    'stiffness': 0.0,
+                    'test_force': 100.0,
+                    'max_displacement': 0.0
+                }
         
         return results

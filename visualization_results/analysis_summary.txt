@@ -1,0 +1,42 @@
+TWO-STOREY STRUCTURE ANALYSIS SUMMARY
+==================================================
+
+MODEL INFORMATION:
+- Nodes: 12
+- Members: 16
+- Plates: 2
+- Shear Walls: 2
+- Load Combinations: 3
+
+FRAME ANALYSIS RESULTS:
+
+Load Combination: ULS_1
+  Max displacement: 3.204696 m at node 11
+  Max moment: 0.87 kN⋅m in member C1_FS
+
+Load Combination: ULS_2
+  Max displacement: 5.954153 m at node 10
+  Max moment: 1.21 kN⋅m in member C2_FS
+
+Load Combination: SLS
+  Max displacement: 2.356145 m at node 11
+  Max moment: 0.64 kN⋅m in member C1_FS
+
+
+SHEAR WALL ANALYSIS RESULTS:
+
+Shear Wall: SW_X1
+  Dimensions: 6.0m × 6.0m
+  Piers identified: 3
+  Coupling beams: 1
+  Story stiffness:
+    First_Floor: 1860.8 kN/m
+    Second_Floor: 511.6 kN/m
+
+Shear Wall: SW_Y1
+  Dimensions: 4.0m × 6.0m
+  Piers identified: 4
+  Coupling beams: 1
+  Story stiffness:
+    First_Floor: 964.4 kN/m
+    Second_Floor: 137.7 kN/m

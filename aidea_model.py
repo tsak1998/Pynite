@@ -162,6 +162,96 @@ class LoadCases(BaseModel):
     AISC: Dict[str, str] = {}
 
 
+# === Shear Wall Models ===
+
+class ShearWallMaterial(BaseModel):
+    """Material definition for shear wall regions."""
+    name: str
+    elasticity_modulus: float
+    shear_modulus: float
+    poissons_ratio: float
+    density: float
+    thickness: float
+    x_start: Optional[float] = None
+    x_end: Optional[float] = None
+    y_start: Optional[float] = None
+    y_end: Optional[float] = None
+
+
+class ShearWallOpening(BaseModel):
+    """Opening definition in a shear wall."""
+    name: str
+    x_start: float
+    y_start: float
+    width: float
+    height: float
+    tie_stiffness: Optional[float] = None  # AE value for tie above opening
+
+
+class ShearWallFlange(BaseModel):
+    """Flange (wall return) definition for a shear wall."""
+    thickness: float
+    width: float
+    x_position: float
+    y_start: float
+    y_end: float
+    material_name: str
+    side: Literal["NS", "FS"]  # Near Side or Far Side
+
+
+class ShearWallSupport(BaseModel):
+    """Support definition for a shear wall."""
+    elevation: float = 0.0
+    x_start: Optional[float] = None
+    x_end: Optional[float] = None
+
+
+class ShearWallStory(BaseModel):
+    """Story/floor definition for a shear wall."""
+    story_name: str
+    elevation: float
+    x_start: Optional[float] = None
+    x_end: Optional[float] = None
+
+
+class ShearWallLoad(BaseLoad):
+    """Load applied to a shear wall story."""
+    story_name: str
+    force_magnitude: float
+    load_type: Literal["shear", "axial"] = "shear"
+
+
+class ShearWall(BaseModel):
+    """
+    Shear wall definition for lateral force resistance.
+    
+    A shear wall resists loads parallel to the plane of the wall and is typically
+    used to resist wind and seismic forces. This model supports complex geometries
+    with openings, flanges, and multiple materials.
+    """
+    name: str
+    length: float  # Overall wall length
+    height: float  # Overall wall height
+    mesh_size: float = 1.0  # Desired mesh size for finite element analysis
+    ky_modification_factor: float = 0.35  # Stiffness reduction for cracking
+    
+    # Materials - can have multiple materials in different regions
+    materials: List[ShearWallMaterial] = []
+    
+    # Geometric features
+    openings: List[ShearWallOpening] = []
+    flanges: List[ShearWallFlange] = []
+    
+    # Boundary conditions and loading
+    supports: List[ShearWallSupport] = []
+    stories: List[ShearWallStory] = []
+    loads: List[ShearWallLoad] = []
+    
+    # Analysis options
+    include_pier_analysis: bool = True
+    include_coupling_beam_analysis: bool = True
+
+
 class Model(BaseModel):
     settings: Settings
     details: List[Any]
@@ -183,3 +273,6 @@ class Model(BaseModel):
     load_cases: LoadCases
     nodal_masses: Dict[str, Any]
     design_input: List[Any]
+    shear_walls: Dict[str, ShearWall] = {}
+
+

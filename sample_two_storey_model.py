@@ -7,7 +7,9 @@ using the AIDEA model format for testing the translator.
 
 from aidea_model import (
     Model, Settings, SettingsUnits, Node, Member, Material, Section, Plate,
-    Support, PointLoad, DistributedLoad, SelfWeight, LoadCombination, Pressure
+    Support, PointLoad, DistributedLoad, SelfWeight, LoadCombination, Pressure,
+    ShearWall, ShearWallMaterial, ShearWallOpening, ShearWallFlange,
+    ShearWallSupport, ShearWallStory, ShearWallLoad
 )
 
 
@@ -50,6 +52,17 @@ def create_two_storey_structure() -> Model:
             yield_strength=355.0,         # MPa
             ultimate_strength=510.0,      # MPa
             thermal_expansion_coefficient=12e-6  # 1/°C
+        ),
+        '2': Material(
+            id=2,
+            name='Concrete C30/37',
+            elasticity_modulus=33000.0,   # MPa (Ec = 33 GPa for C30/37)
+            shear_modulus=13750.0,        # MPa (G = Ec/(2*(1+ν)))
+            density=2500.0,               # kg/m³
+            poissons_ratio=0.2,
+            yield_strength=30.0,          # MPa (fck)
+            ultimate_strength=37.0,       # MPa (fcm)
+            thermal_expansion_coefficient=10e-6  # 1/°C
         )
     }
     
@@ -571,6 +584,161 @@ def create_two_storey_structure() -> Model:
         )
     }
     
+    # Shear Walls for lateral resistance
+    shear_walls = {
+        # Shear Wall 1 - Along X direction (between nodes 1-2 and 5-6)
+        'SW_X1': ShearWall(
+            name='Shear Wall X1',
+            length=6.0,  # 6m long (between columns)
+            height=6.0,  # 6m high (full building height)
+            mesh_size=0.5,  # 0.5m mesh size for detailed analysis
+            ky_modification_factor=0.35,  # Cracking factor per ACI 318
+            
+            # Concrete material for the wall
+            materials=[
+                ShearWallMaterial(
+                    name='Concrete',
+                    elasticity_modulus=33000.0,  # MPa
+                    shear_modulus=13750.0,       # MPa
+                    poissons_ratio=0.2,
+                    density=2500.0,              # kg/m³
+                    thickness=0.25,              # 250mm thick wall
+                    x_start=0.0, x_end=6.0,
+                    y_start=0.0, y_end=6.0
+                )
+            ],
+            
+            # Add a door opening
+            openings=[
+                ShearWallOpening(
+                    name='Door_1',
+                    x_start=2.0,
+                    y_start=0.0,
+                    width=1.0,   # 1m wide door
+                    height=2.1,  # 2.1m high door
+                    tie_stiffness=None  # No tie above door
+                )
+            ],
+            
+            # Foundation support
+            supports=[
+                ShearWallSupport(
+                    elevation=0.0,
+                    x_start=0.0,
+                    x_end=6.0
+                )
+            ],
+            
+            # Define stories for stiffness calculation
+            stories=[
+                ShearWallStory(
+                    story_name='First_Floor',
+                    elevation=3.0,
+                    x_start=0.0,
+                    x_end=6.0
+                ),
+                ShearWallStory(
+                    story_name='Second_Floor',
+                    elevation=6.0,
+                    x_start=0.0,
+                    x_end=6.0
+                )
+            ],
+            
+            # Seismic loads
+            loads=[
+                ShearWallLoad(
+                    load_id=1,
+                    load_group='Wind',
+                    story_name='First_Floor',
+                    force_magnitude=50.0,  # 50 kN lateral force
+                    load_type='shear'
+                ),
+                ShearWallLoad(
+                    load_id=2,
+                    load_group='Wind',
+                    story_name='Second_Floor',
+                    force_magnitude=40.0,  # 40 kN lateral force
+                    load_type='shear'
+                )
+            ]
+        ),
+        
+        # Shear Wall 2 - Along Y direction (between nodes 2-3 and 6-7)
+        'SW_Y1': ShearWall(
+            name='Shear Wall Y1',
+            length=4.0,  # 4m long
+            height=6.0,  # 6m high
+            mesh_size=0.5,
+            ky_modification_factor=0.35,
+            
+            materials=[
+                ShearWallMaterial(
+                    name='Concrete',
+                    elasticity_modulus=33000.0,
+                    shear_modulus=13750.0,
+                    poissons_ratio=0.2,
+                    density=2500.0,
+                    thickness=0.20,  # 200mm thick wall
+                    x_start=0.0, x_end=4.0,
+                    y_start=0.0, y_end=6.0
+                )
+            ],
+            
+            # Add a window opening
+            openings=[
+                ShearWallOpening(
+                    name='Window_1',
+                    x_start=1.0,
+                    y_start=3.5,
+                    width=1.5,   # 1.5m wide window
+                    height=1.2,  # 1.2m high window
+                    tie_stiffness=None
+                )
+            ],
+            
+            supports=[
+                ShearWallSupport(
+                    elevation=0.0,
+                    x_start=0.0,
+                    x_end=4.0
+                )
+            ],
+            
+            stories=[
+                ShearWallStory(
+                    story_name='First_Floor',
+                    elevation=3.0,
+                    x_start=0.0,
+                    x_end=4.0
+                ),
+                ShearWallStory(
+                    story_name='Second_Floor',
+                    elevation=6.0,
+                    x_start=0.0,
+                    x_end=4.0
+                )
+            ],
+            
+            loads=[
+                ShearWallLoad(
+                    load_id=3,
+                    load_group='Wind',
+                    story_name='First_Floor',
+                    force_magnitude=30.0,  # 30 kN lateral force
+                    load_type='shear'
+                ),
+                ShearWallLoad(
+                    load_id=4,
+                    load_group='Wind',
+                    story_name='Second_Floor',
+                    force_magnitude=25.0,  # 25 kN lateral force
+                    load_type='shear'
+                )
+            ]
+        )
+    }
+    
     # Create the complete model
     model = Model(
         settings=settings,
@@ -592,7 +760,8 @@ def create_two_storey_structure() -> Model:
         load_combinations=load_combinations,
         load_cases={},
         nodal_masses={},
-        design_input=[]
+        design_input=[],
+        shear_walls=shear_walls
     )
     
     return model
@@ -612,3 +781,13 @@ if __name__ == "__main__":
     print(f"Distributed loads: {len(model.distributed_loads)}")
     print(f"Area loads (pressure): {len(model.area_loads)}")
     print(f"Load combinations: {len(model.load_combinations)}")
+    print(f"Shear walls: {len(model.shear_walls)}")
+    
+    # Print shear wall details
+    for wall_id, wall in model.shear_walls.items():
+        print(f"\nShear Wall {wall_id}:")
+        print(f"  - Length: {wall.length}m, Height: {wall.height}m")
+        print(f"  - Materials: {len(wall.materials)}")
+        print(f"  - Openings: {len(wall.openings)}")
+        print(f"  - Stories: {len(wall.stories)}")
+        print(f"  - Loads: {len(wall.loads)}")

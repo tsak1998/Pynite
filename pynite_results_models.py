@@ -232,6 +232,85 @@ class MemberResults(BaseResult):
     relative_deflection_z: Optional[MemberRelativeDeflection] = None
 
 
+# === Shear Wall Results ===
+
+class PierResults(BaseModel):
+    """Results for a shear wall pier."""
+    pier_id: str = Field(description="Pier identifier")
+    x_position: float = Field(description="X-position of pier left edge")
+    y_position: float = Field(description="Y-position of pier bottom edge")
+    width: float = Field(description="Pier width")
+    height: float = Field(description="Pier height")
+    
+    # Force results
+    axial_force: float = Field(description="Total axial force in pier (P)")
+    shear_force: float = Field(description="Total shear force in pier (V)")
+    moment: float = Field(description="Total moment about pier center (M)")
+    shear_span_ratio: float = Field(description="Moment to shear span ratio (M/VL)")
+
+
+class CouplingBeamResults(BaseModel):
+    """Results for a shear wall coupling beam."""
+    beam_id: str = Field(description="Coupling beam identifier")
+    x_position: float = Field(description="X-position of beam left edge")
+    y_position: float = Field(description="Y-position of beam bottom edge")
+    length: float = Field(description="Beam length")
+    height: float = Field(description="Beam height")
+    
+    # Force results
+    axial_force: float = Field(description="Total axial force in beam (P)")
+    shear_force: float = Field(description="Total shear force in beam (V)")
+    moment: float = Field(description="Total moment about beam center (M)")
+    shear_span_ratio: float = Field(description="Moment to shear span ratio (M/VH)")
+
+
+class ShearWallStiffness(BaseModel):
+    """Stiffness results for a shear wall story."""
+    story_name: str = Field(description="Story identifier")
+    stiffness: float = Field(description="Story stiffness (force/displacement)")
+    test_force: float = Field(description="Test force used for stiffness calculation")
+    max_displacement: float = Field(description="Maximum displacement under test force")
+
+
+class ShearWallResults(BaseResult):
+    """Complete results for a shear wall."""
+    wall_id: str = Field(description="Shear wall identifier")
+    wall_length: float = Field(description="Overall wall length")
+    wall_height: float = Field(description="Overall wall height")
+    
+    # Pier results
+    pier_results: Dict[str, PierResults] = Field(
+        default_factory=dict,
+        description="Results for individual piers by pier ID"
+    )
+    
+    # Coupling beam results
+    coupling_beam_results: Dict[str, CouplingBeamResults] = Field(
+        default_factory=dict,
+        description="Results for individual coupling beams by beam ID"
+    )
+    
+    # Story stiffness results
+    story_stiffness: Dict[str, ShearWallStiffness] = Field(
+        default_factory=dict,
+        description="Stiffness results by story name"
+    )
+    
+    # Overall wall results
+    total_base_shear: Optional[float] = Field(
+        None,
+        description="Total base shear in the wall"
+    )
+    total_overturning_moment: Optional[float] = Field(
+        None,
+        description="Total overturning moment at the base"
+    )
+    max_drift: Optional[float] = Field(
+        None,
+        description="Maximum story drift"
+    )
+
+
 # === Load Combination Results ===
 
 class LoadCombinationResults(BaseModel):
@@ -258,6 +337,12 @@ class LoadCombinationResults(BaseModel):
     plate_results: Dict[str, PlateResults] = Field(
         default_factory=dict,
         description="Plate/quad results by element ID"
+    )
+    
+    # Shear wall results
+    shear_wall_results: Dict[str, ShearWallResults] = Field(
+        default_factory=dict,
+        description="Shear wall results by wall ID"
     )
 
 
@@ -338,6 +423,12 @@ class PyNiteResults(BaseModel):
         """Get plate results for a specific plate and load combination."""
         if combo_name in self.load_combination_results:
             return self.load_combination_results[combo_name].plate_results.get(plate_id)
+        return None
+    
+    def get_shear_wall_results(self, wall_id: str, combo_name: str) -> Optional[ShearWallResults]:
+        """Get shear wall results for a specific wall and load combination."""
+        if combo_name in self.load_combination_results:
+            return self.load_combination_results[combo_name].shear_wall_results.get(wall_id)
         return None
     
     def get_all_combinations(self) -> List[str]:
@@ -636,4 +727,113 @@ def create_plate_results_from_pynite(pynite_plate, combo_name: str) -> PlateResu
         corner_moments=corner_moments,
         center_stress=center_stress,
         center_moment=center_moment
+    )
+
+
+def create_pier_results_from_pynite(pynite_pier, combo_name: str) -> PierResults:
+    """
+    Create PierResults from a PyNite Pier object.
+    
+    Args:
+        pynite_pier: PyNite Pier object
+        combo_name: Load combination name
+        
+    Returns:
+        PierResults object populated with data from PyNite pier
+    """
+    # Get pier forces
+    P, M, V, M_VL = pynite_pier.sum_forces(combo_name)
+    
+    return PierResults(
+        pier_id=pynite_pier.name,
+        x_position=pynite_pier.x,
+        y_position=pynite_pier.y,
+        width=pynite_pier.width,
+        height=pynite_pier.height,
+        axial_force=P,
+        shear_force=V,
+        moment=M,
+        shear_span_ratio=M_VL
+    )
+
+
+def create_coupling_beam_results_from_pynite(pynite_beam, combo_name: str) -> CouplingBeamResults:
+    """
+    Create CouplingBeamResults from a PyNite CouplingBeam object.
+    
+    Args:
+        pynite_beam: PyNite CouplingBeam object
+        combo_name: Load combination name
+        
+    Returns:
+        CouplingBeamResults object populated with data from PyNite coupling beam
+    """
+    # Get coupling beam forces
+    P, M, V, M_VH = pynite_beam.sum_forces(combo_name)
+    
+    return CouplingBeamResults(
+        beam_id=pynite_beam.name,
+        x_position=pynite_beam.x,
+        y_position=pynite_beam.y,
+        length=pynite_beam.length,
+        height=pynite_beam.height,
+        axial_force=P,
+        shear_force=V,
+        moment=M,
+        shear_span_ratio=M_VH
+    )
+
+
+def create_shear_wall_results_from_pynite(pynite_shear_wall, combo_name: str) -> ShearWallResults:
+    """
+    Create ShearWallResults from a PyNite ShearWall object.
+    
+    Args:
+        pynite_shear_wall: PyNite ShearWall object
+        combo_name: Load combination name
+        
+    Returns:
+        ShearWallResults object populated with data from PyNite shear wall
+    """
+    
+    # Create pier results
+    pier_results = {}
+    for pier_id, pier in pynite_shear_wall.piers.items():
+        pier_results[pier_id] = create_pier_results_from_pynite(pier, combo_name)
+    
+    # Create coupling beam results
+    coupling_beam_results = {}
+    for beam_id, beam in pynite_shear_wall.coupling_beams.items():
+        coupling_beam_results[beam_id] = create_coupling_beam_results_from_pynite(beam, combo_name)
+    
+    # Create story stiffness results
+    story_stiffness = {}
+    for story in pynite_shear_wall._stories:
+        story_name = story[0]
+        try:
+            stiffness_value = pynite_shear_wall.stiffness(story_name)
+            story_stiffness[story_name] = ShearWallStiffness(
+                story_name=story_name,
+                stiffness=stiffness_value,
+                test_force=100.0,  # PyNite uses 100 kips for stiffness calculation
+                max_displacement=100.0 / stiffness_value if stiffness_value > 0 else 0.0
+            )
+        except:
+            # If stiffness calculation fails, create a placeholder
+            story_stiffness[story_name] = ShearWallStiffness(
+                story_name=story_name,
+                stiffness=0.0,
+                test_force=100.0,
+                max_displacement=0.0
+            )
+    
+    return ShearWallResults(
+        load_combination=combo_name,
+        element_id=f"ShearWall_{id(pynite_shear_wall)}",
+        wall_id=f"ShearWall_{id(pynite_shear_wall)}",
+        wall_length=pynite_shear_wall.L or 0.0,
+        wall_height=pynite_shear_wall.H or 0.0,
+        pier_results=pier_results,
+        coupling_beam_results=coupling_beam_results,
+        story_stiffness=story_stiffness
     )
