@@ -1,6 +1,35 @@
 from typing import Dict, List, Literal, Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
+
+# === Base classes for common patterns ===
+
+class BaseOffset(BaseModel):
+    offset_Ax: str
+    offset_Ay: str
+    offset_Az: str
+    offset_Bx: str
+    offset_By: str
+    offset_Bz: str
+
+
+class BaseStiffness(BaseModel):
+    stiffness_A_Ry: float
+    stiffness_A_Rz: float
+    stiffness_B_Ry: float
+    stiffness_B_Rz: float
+
+
+class BaseLoad(BaseModel):
+    load_id: int
+    load_group: str
+
+
+class BaseAxes(BaseModel):
+    axes: Literal["global", "local"] = "global"
+
+
+# === Models ===
 
 class SettingsUnits(BaseModel):
     length: str = 'm'
@@ -33,25 +62,14 @@ class Node(BaseModel):
     z: float
 
 
-class Member(BaseModel):
+class Member(BaseOffset, BaseStiffness):
     type: str
-
     node_A: int
     node_B: int
     section_id: int
     rotation_angle: int
     fixity_A: str
     fixity_B: str
-    offset_Ax: str
-    offset_Ay: str
-    offset_Az: str
-    offset_Bx: str
-    offset_By: str
-    offset_Bz: str
-    stiffness_A_Ry: float
-    stiffness_A_Rz: float
-    stiffness_B_Ry: float
-    stiffness_B_Rz: float
 
 
 class Material(BaseModel):
@@ -89,19 +107,16 @@ class Support(BaseModel):
     restraint_code: str
 
 
-class PointLoad(BaseModel):
-    load_id: int
+class PointLoad(BaseLoad):
     type: Literal['n', 'm'] = 'n'
     node: str | None = None
     member: str | None = None
     x_mag: float
     y_mag: float
     z_mag: float
-    load_group: str
 
 
-class DistributedLoad(BaseModel):
-    load_id: int
+class DistributedLoad(BaseLoad, BaseAxes):
     member: int
     x_mag_A: float = 0
     y_mag_A: float = 0
@@ -111,22 +126,13 @@ class DistributedLoad(BaseModel):
     z_mag_B: float = 0
     position_A: float = 0
     position_B: float = 100
-    load_group: str
-    axes: Literal["global", "local"] = 'global'
 
 
-class AreaLoad(BaseModel):
-    type: str
-    nodes: str
-    members: Optional[Any]
-    mag: float
-    direction: str
-    elevations: Optional[Any]
-    mags: Optional[Any]
-    column_direction: str
-    elevation_direction: Optional[Any]
-    loaded_members_axis: Optional[Any]
-    LG: str
+class Pressure(BaseLoad, BaseAxes):
+    plate_id: int
+    x_mag: float = 0
+    y_mag: float = 0
+    z_mag: float = 0
 
 
 class SelfWeight(BaseModel):
@@ -163,7 +169,7 @@ class Model(BaseModel):
     point_loads: Dict[str, Any]
     moments: Dict[str, Any]
     distributed_loads: Dict[str, Any]
-    area_loads: Dict[str, AreaLoad]
+    area_loads: Dict[str, Pressure]
     self_weight: Dict[str, SelfWeight]
     load_combinations: Dict[str, LoadCombination]
     load_cases: LoadCases
