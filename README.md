@@ -1,122 +1,295 @@
-<div align="center">
-  <img src="https://github.com/JWock82/Pynite/raw/main/Resources/Full Logo No Buffer.png" width=40% align="center"/>
-  <br>
-  <h1>Simple Finite Element Analysis in Python</h1>
-</div>
+# AIDEA to PyNite Structural Analysis System
 
-![Build Status](https://github.com/JWock82/Pynite/actions/workflows/build-and-test.yml/badge.svg)
-[![codecov](https://codecov.io/gh/JWock82/Pynite/branch/main/graph/badge.svg?token=ZH18US3A7P)](https://codecov.io/gh/JWock82/Pynite)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/PyNiteFEA)
-<img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/JWock82/Pynite">
-![GitHub last commit](https://img.shields.io/github/last-commit/JWock82/Pynite)
-![GitHub](https://img.shields.io/github/license/JWock82/Pynite)
-[![Documentation Status](https://readthedocs.org/projects/pynite/badge/?version=latest)](https://pynite.readthedocs.io/en/latest/?badge=latest)
+A comprehensive structural analysis system that translates AIDEA model format to PyNite and performs complete structural analysis.
 
-An easy to use elastic 3D structural engineering finite element analysis library for Python.
+## Overview
 
-# Installation
-The easiest way to install Pynite is with pip: `pip install PyniteFEA[all]`.
+This system provides a complete workflow for structural analysis:
 
-For a more detailed discussion on installation options and dependencies see https://pynite.readthedocs.io/en/latest/installation.html
+1. **AIDEA Model Creation**: Define structural models using AIDEA format with nodes, members, materials, sections, loads, and supports
+2. **Translation to PyNite**: Automatic conversion from AIDEA format to PyNite finite element model
+3. **Structural Analysis**: Run linear static analysis using PyNite's powerful analysis engine
+4. **Results Processing**: Extract and display comprehensive analysis results
 
-# Current Capabilities
-* 3D static analysis of elastic structures.
-* P-&Delta; analysis of frame type structures.
-* Member point loads, linearly varying distributed loads, and nodal loads are supported.
-* Classify loads by load case and create load combinations from load cases.
-* Produces shear, moment, and deflection results and diagrams for each member.
-* Automatic handling of internal nodes on frame members (physical members).
-* Tension-only and compression-only elements.
-* Spring elements: two-way, tension-only, and compression-only.
-* Spring supports: two-way and one-way.
-* Quadrilateral plate elements (DKMQ formulation).
-* Rectangular plate elements (12-term polynomial formulation).
-* Basic meshing algorithms for some common shapes and for openings in rectangular meshes.
-* Reports support reactions.
-* Rendering of model geometry, supports, load cases, load combinations, and deformed shapes.
-* Advanced tools for modeling and analyzing complex shear walls.
-* Generates PDF reports for models and model results.
+## Project Structure
 
-# Project Objectives
-As I've gotten into the structural engineering profession, I've found there's a need for an easy to use open-source finite element package. I hope to help fill that need by prioritizing the following:
+```
+├── aidea_model.py                 # AIDEA model data structures (Pydantic models)
+├── aidea_to_pynite_translator.py  # Core translator class
+├── sample_two_storey_model.py     # Example two-storey building model
+├── run_structural_analysis.py     # Main execution script
+└── README.md                      # This documentation
+```
 
-1. Accuracy: There are no guarantees Pynite is error free, but accuracy and correctness are a priority. When bugs or errors are identified, top priority will be given to eliminate them. Pynite's code is frequently reviewed, and its output is tested against a suite of textbook problems with known solutions using continuous integration (CI) anytime a change to the code base is made. If you do happen to find an error, please report it as an issue.
+## Features
 
-2. Simplicity: There are other finite element alternatives out there with many more capabilities, but they are often lacking in documentation, written in difficult languages, or require extensive knowledge of finite element theory and/or element formulations to use. Pynite is not intended to be the most technically advanced solver out there. Rather, the goal is to provide a robust yet simple general purpose package.
+### AIDEA Model Support
+- **Materials**: Steel, concrete, and custom materials with full property definitions
+- **Sections**: Standard and custom cross-sections (beams, columns)
+- **Nodes**: 3D coordinate system with full DOF support
+- **Members**: Beams and columns with end releases and offsets
+- **Supports**: Fixed, pinned, roller, and custom support conditions
+- **Loads**: Point loads, distributed loads, self-weight, and pressure loads
+- **Load Combinations**: Multiple load combinations with factors
 
-4. Improvement: Pynite is getting better at what it does. Each new feature provides leverage to build upon previous features in more elaborate ways. Key to improvement is (a) maintaining the core features that other features rely on, and (b) adding new features that are solid stepping stones to other features. Improvement most often happens by getting the small and simple things right incrementally, rather than with sweeping overhauls all at once.
+### PyNite Integration
+- **Automatic Translation**: Seamless conversion of all AIDEA elements
+- **Analysis Types**: Linear static, P-Delta, and nonlinear analysis support
+- **Results Extraction**: Comprehensive results including displacements, forces, and reactions
+- **Validation**: Built-in model validation and statics checking
 
-5. Collaboration: If you see a way to improve Pynite, you are encouraged to contribute. There are many simple ways to contribute that don't take much effort. Issue reports and pull requests can be very helpful. One easy way to contribute is to add to or improve the library of simple example problems in the `Examples` folder. Please keep them relatively simple. Most users learn Pynite from following these simple examples. Another way to help Pynite without having to know too much about its internal workings is to help with the documentation files in the `docs\source` folder of this repository. These files help new users learn Pynite. If you are able to make a bigger commitment, and would like to become a regular contributor to the project, please reach out about becoming a collaborator.
+## Example: Two-Storey Building
 
-# Support
-Whether you just need help getting started with Pynite, or are looking to build something more complex, there are a few resources available:
-* The examples in the "Examples" folder in this repository cover a variety of simple problems. The comments in the examples provide additional guidance on how Pynite works.
-* Documentation is a work in progress and can be found on readthedocs here: https://pynite.readthedocs.io/en/latest/index.html.
-* If you're looking for more direct guidance on using Pynite, or for help coding a project, I am available on a private consulting basis. You can reach out to me directly at Building.Code@outlook.com to discuss options.
+The included example demonstrates a complete two-storey rectangular building:
 
-# Sponsors
-* A special thanks to @edson-gusmoes for sponsoring `Pynite`!
+### Structure Details
+- **Dimensions**: 6m × 4m × 6m (height)
+- **Construction**: Steel frame with HEB200 columns and IPE300 beams
+- **Floors**: Two levels at 3m and 6m height
+- **Supports**: Fixed base connections for all columns
+- **Loading**: Dead loads, live loads, and wind loads
 
-# Example Projects
-Here's a list of projects that use Pynite:
+### Model Components
+- **12 Nodes**: Ground level (4), first floor (4), second floor (4)
+- **16 Members**: 8 columns, 8 beams
+- **1 Material**: Steel S355 (E=210 GPa, fy=355 MPa)
+- **2 Sections**: HEB200 columns, IPE300 beams
+- **4 Supports**: Fixed base supports
+- **20 Loads**: Point loads and distributed loads
+- **3 Load Combinations**: ULS and SLS combinations
 
-* Building Code (https://building-code.herokuapp.com/) - This one is my personal side project.
-* Standard Solver (https://www.standardsolver.com/)
-* Civils.ai (https://civils.ai/1/free-3D-finite-element-structural-analysis)
-* Phaenotyp (https://github.com/bewegende-Architektur/Phaenotyp) (https://youtu.be/shloSw9HjVI)
+## Usage
 
-# What's New?
-v1.2.1 (in progress)
-* Fixed shear wall thickness issues. The new `ShearWall` feature was not applying the wall thickness correctly. This has been fixed.
+### Basic Usage
 
-v1.2.0
-* Added the ability to apply loads in steps in the `FEModel3D.analyze` method via the new `num_steps` keyword argument. `num_steps` defaults to 1, but if a higher number is used the load will be split into the specified number of steps and be applied incrementally. This can be very helpful when dealing with complex tension/compression-only scenarios that otherwise may have had trouble converging. Consider using 10 to 20 load steps when dealing with complex T/C-only models. The ability to perform step-wise analysis better approximates nonlinear load-displacement curves and sets `Pynite` up for future nonlinear analysis features.
-* Added P-&Delta; effects to vectorized results. Prior to this fix, member end forces and internal forces were being calculated correctly, but the P-&Delta; flag was not triggered in the methods that used vectorized results. Moment plots and moment arrays were the only items that were affected. Spot checking moments, and checking max/min moments were not affected.
+```python
+from sample_two_storey_model import create_two_storey_structure
+from aidea_to_pynite_translator import AideaToPyniteTranslator
 
-v1.1.2
-* Corrected a long-standing issue transforming quad local bending and membrane stresses to global coordinates. This did not affect quad local stress results. Only if you were converting the results to global coordinates would the issue arise.
-* Array results no longer include extra points at discontinuities. This was affecting some users who were using array results. Note that without the extra points, you may need to use a larger number of points to identify max/min values at discontinuities.
-* Added axial stiffness adjustments to P-&Delta; analysis. P-&Delta; effects primarily affect bending stiffness, but axial stiffness is affected too. While these axial stiffness adjustments are often negligible, they can be important in some cases. `Pynite` now considers axial stiffness adjustments when running P-&Delta; analysis.
-* Greatly simplified code for P-&Delta; analysis. P-&Delta; analysis should converge quicker with fewer unnecessary iterations. `Pynite` was not taking full advantage of the fact that the geometric stiffness matrix eliminates the need to iterate when solving for P-&Delta; effects. Extra solutions were being run for no reason.
-* Cleaned up many "code smells".
+# Create AIDEA model
+aidea_model = create_two_storey_structure()
 
-v1.1.1
-* Bug fix for member array results. Exceptions were being thrown in some cases.
-* Simplified code for array functions by removing redundant algorithms.
+# Initialize translator
+translator = AideaToPyniteTranslator()
 
-v1.1.0
-* Added a `VTKWriter` class to allow for easy exporting to `Paraview`.
-* Improved type hints for a simpler user experience.
-* Fixed a bug in the pdf reports. Load combos were not being sent to the report template, which was preventing any load results from being displayed in the report.
-* Simplified code for vector extraction of member segment results, and improved results reporting at load discontinuities along beams. Two results values are possible at mathematical discontinues, and only one was being reported. Now both are reported. This issue was only noticable if array results along a member were requested at large intervals rather than small intervals.
-* Bug fix for array results format for physical members. This only affected users who used the array results functions.
+# Translate to PyNite
+pynite_model = translator.translate_model(aidea_model)
 
-v1.0.1
-* Changes to testing code coverage less than 2% no longer trigger build failure.
-* Code cleanup: removed `DKMQ.py` from the repository that was no longer in use. The code for the DKMQ element now lives in `Quad3D.py` instead.
-* Frustrum meshes generated about the global X and Z axes are now being generated correctly.
-* Fixed a bug that was not letting plate contours render for `VTK` users using load combinations other than 'Combo 1'. This bug was introduced recently when the option for global stress results was added. Global stress results for `VTK` rendering are still not supported yet. Users are urged to switch to using `pyvista` rendering instead as `VTK` rendering is on its way out of `Pynite` and may be only minimally maintained going forward.
+# Run analysis
+translator.run_analysis(analysis_type='linear', log=True, check_statics=True)
 
-v1.0.0
-* v1.0 is here! I feel the program is stable enough and has been around long enough to be battle tested and to call it v1.0.
-* Important!!! - Changed all calls from `PyNite` to `Pynite` this matches the logo, and made more sense. I'm not sure why I ever capitalized that N to begin with, but going forward from v1.0, `Pynite` has a lowercase n. I've been wanting to make this change as part of the v1.0 release.
-* Added a new `ShearWall` class that assists you in constructing and analyzing shear walls. This tool automatically detects piers and coupling beams, and finds the forces inside them and calculates their ascpect ratios, which can be handy for seismic design. It reports stiffness of multi-story shear walls at each story to help with rigid diaphragm analysis. It allows for modeling walls with openings, steps, and partial depth diaphragm loading.
-* `vtk` and `pyvista` are now optional dependencies. This change streamlines installation for users who don't rely on `Pynite's` built-in visualization tools. From now on, `Pynite` should be installed using `$ pip install PyNiteFEA[all]` for most users.
-* `Pynite` no longer uses auxiliary nodes to define member cross-section rotation. You can now directly specify the rotation (in degrees) when you define a member using the `rotation` argument.
+# Get results
+results = translator.get_results_summary()
+```
 
-v0.0.98-100
-* Bug fix for `FEModel3D.add_section`. It was throwing exceptions and had not been updated to match the examples.
-* Improvements to spring rendering in `pyvista`. Up until this point spring elements were being rendered as lines. They now render as zigzag lines in `pyvista`. There is still more work for improvement on spring rendering, but this is a good start.
+### Complete Workflow
 
-v0.0.97
-* Fixed physical member load and deflection diagrams. Physical members are a newer feature. Member internal results were being reported correctly, but the diagrams for these members had not been revised to plot correctly. The old method for plain members was still being used. Physical members were not considering that a physical member was made from multiple submembers, and results for each span needed to be combined to get the whole plot.
-* Switched some commonly used python libraries to be installed by default with `Pynite`. Most `Pynite` users will want these libraries installed for full-featured use of `Pynite`. These libraries help with `Pynite` visualizations, plotting, the sparse solver, and `Jupyter Lab` functionality. This is just easier for new python users. I was getting a lot of questions about how to set up libraries, and this takes the guesswork away. This is part of `Pynite's` objective to stay easy to use.
+Run the complete analysis workflow:
 
-v0.0.96
-* Changed quad elements from MITC4 formulation to DKMQ formulation. This greatly improves plate results at corners and increases the speed with which the plate's stiffness matrix is assembled. MITC4 element code has been retained as legacy code, but is no longer used by the program.
-* ***Breaking Changes***: Implemented snake-case for dictionary names (e.g. `FEModel3D.Nodes` is now `FEModel3D.nodes`). These changes were made to prepare `Pynite` for a v1.0 release that is consistent with the `PEP8` style guide for `python`.
-* Bug fix for tension/conpression-only member internal results. While global results were correct, member internal results were showing results from the first tension/compression only iteration.
-* Member results arrays can now be customized to pick up user defined points. Member results arrays generate results much faster now too.
+```bash
+python run_structural_analysis.py
+```
 
-v0.0.95
-* Bug fix for rendering negative point loads via `Pyvista`. They were being rendered as positive loads. The analysis was not impacted by this bug.
+This will:
+1. Create the AIDEA model
+2. Translate to PyNite format
+3. Run structural analysis
+4. Display comprehensive results
+5. Perform model validation
+
+## Analysis Results
+
+The system provides comprehensive analysis results:
+
+### Node Results
+- **Displacements**: DX, DY, DZ translations
+- **Rotations**: RX, RY, RZ rotations
+- **Maximum values**: Identified with node locations
+
+### Member Results
+- **Forces**: Axial, shear, and moment forces
+- **Extrema**: Maximum and minimum values along member length
+- **Diagrams**: Shear, moment, and deflection diagrams (via PyNite)
+
+### Support Reactions
+- **Forces**: Reaction forces in all directions
+- **Moments**: Reaction moments about all axes
+- **Equilibrium**: Automatic statics checking
+
+### Load Combinations
+- **Multiple Combinations**: ULS and SLS combinations
+- **Factored Results**: Properly factored load combinations
+- **Envelope Results**: Maximum and minimum values across combinations
+
+## Model Validation
+
+The system includes comprehensive validation:
+
+- **Geometry Validation**: Node connectivity and member orientation
+- **Load Validation**: Load application and load combination factors
+- **Support Validation**: Support condition verification
+- **Statics Checking**: Global equilibrium verification
+- **Stability Checking**: Model stability analysis
+
+## Advanced Features
+
+### Custom Materials
+```python
+material = Material(
+    name='Custom Steel',
+    elasticity_modulus=200000.0,  # MPa
+    shear_modulus=77000.0,        # MPa
+    density=7850.0,               # kg/m³
+    poissons_ratio=0.3,
+    yield_strength=355.0,         # MPa
+    thermal_expansion_coefficient=12e-6  # 1/°C
+)
+```
+
+### Custom Sections
+```python
+section = Section(
+    name='Custom Beam',
+    area=0.0053,      # m²
+    Iz=8356e-8,       # m⁴ (strong axis)
+    Iy=604e-8,        # m⁴ (weak axis)
+    J=20.1e-8,        # m⁴ (torsion)
+    material_id=1
+)
+```
+
+### Load Combinations
+```python
+load_combo = LoadCombination(
+    name='1.35G + 1.5Q',
+    criteria='ULS',
+    Dead=1.35,
+    Live=1.5,
+    Wind=0.9
+)
+```
+
+## Analysis Types
+
+### Linear Static Analysis
+```python
+translator.run_analysis(
+    analysis_type='linear',
+    log=True,
+    check_stability=True,
+    check_statics=True
+)
+```
+
+### P-Delta Analysis
+```python
+translator.run_analysis(
+    analysis_type='pdelta',
+    log=True,
+    max_iter=30
+)
+```
+
+### Nonlinear Analysis
+```python
+translator.run_analysis(
+    analysis_type='nonlinear',
+    log=True,
+    max_iter=30,
+    num_steps=10
+)
+```
+
+## Dependencies
+
+- **PyNite**: Finite element analysis engine
+- **Pydantic**: Data validation and settings management
+- **NumPy**: Numerical computations
+- **Python 3.8+**: Required Python version
+
+## Installation
+
+1. Install PyNite:
+```bash
+pip install PyNite
+```
+
+2. Install additional dependencies:
+```bash
+pip install pydantic numpy
+```
+
+3. Clone or download the project files
+
+## Extending the System
+
+### Adding New Element Types
+1. Define new element in `aidea_model.py`
+2. Add translation logic in `aidea_to_pynite_translator.py`
+3. Update result extraction methods
+
+### Custom Analysis Types
+1. Extend the `run_analysis` method
+2. Add new analysis parameters
+3. Update result processing
+
+### Additional Load Types
+1. Define new load classes in `aidea_model.py`
+2. Add translation methods in translator
+3. Update load combination handling
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Material Properties**: Ensure all required material properties are defined
+2. **Invalid Node References**: Check that all member node references exist
+3. **Load Application**: Verify load directions and magnitudes
+4. **Support Conditions**: Ensure adequate support for stability
+
+### Debugging
+
+Enable detailed logging:
+```python
+translator.run_analysis(analysis_type='linear', log=True)
+```
+
+Check model validation:
+```python
+orphaned_nodes = pynite_model.orphaned_nodes()
+if orphaned_nodes:
+    print(f"Warning: Orphaned nodes found: {orphaned_nodes}")
+```
+
+## Performance
+
+### Model Size Recommendations
+- **Small Models**: < 100 nodes, < 200 members
+- **Medium Models**: 100-1000 nodes, 200-2000 members  
+- **Large Models**: > 1000 nodes, > 2000 members
+
+### Analysis Performance
+- **Linear Analysis**: Fast, suitable for most applications
+- **P-Delta Analysis**: Moderate, for second-order effects
+- **Nonlinear Analysis**: Slower, for advanced analysis
+
+## License
+
+This project is part of the AIDEA structural analysis system development.
+
+## Contributing
+
+1. Follow the existing code structure
+2. Add comprehensive documentation
+3. Include test cases for new features
+4. Ensure backward compatibility
+
+## Support
+
+For questions and support, refer to:
+- PyNite documentation: [PyNite GitHub](https://github.com/JWock82/PyNite)
+- Pydantic documentation: [Pydantic Docs](https://pydantic-docs.helpmanual.io/)
+
+---
+
+**Note**: This system demonstrates the complete workflow from AIDEA model definition through PyNite analysis to results extraction. The example two-storey building provides a comprehensive template for creating more complex structural models.

@@ -96,6 +96,15 @@ class Section(BaseModel):
     J: Optional[float] = None
 
 
+class Plate(BaseModel):
+    type: str = "plate"
+    nodes: List[int]  # List of node IDs that define the plate corners
+    material_id: int
+    thickness: float
+    membrane_thickness: Optional[float] = None
+    bending_thickness: Optional[float] = None
+
+
 class Support(BaseModel):
     tx: float = 0
     ty: float = 0
@@ -117,7 +126,7 @@ class PointLoad(BaseLoad):
 
 
 class DistributedLoad(BaseLoad, BaseAxes):
-    member: int
+    member: int | str
     x_mag_A: float = 0
     y_mag_A: float = 0
     z_mag_A: float = 0
@@ -143,11 +152,10 @@ class SelfWeight(BaseModel):
 
 
 class LoadCombination(BaseModel):
+    model_config = {"extra": "allow"}
+    
     name: str
     criteria: str
-
-    class Config:
-        extra = "allow"
 
 
 class LoadCases(BaseModel):
@@ -159,16 +167,16 @@ class Model(BaseModel):
     details: List[Any]
     nodes: Dict[str, Node]
     members: Dict[str, Member]
-    plates: Dict[str, Any]
+    plates: Dict[str, Plate]
     meshed_plates: Dict[str, Any]
     materials: Dict[str, Material]
     sections: Dict[str, Section]
     supports: Dict[str, Support]
     settlements: Dict[str, Any]
     groups: Dict[str, Any]
-    point_loads: Dict[str, Any]
+    point_loads: Dict[str, PointLoad]
     moments: Dict[str, Any]
-    distributed_loads: Dict[str, Any]
+    distributed_loads: Dict[str, DistributedLoad]
     area_loads: Dict[str, Pressure]
     self_weight: Dict[str, SelfWeight]
     load_combinations: Dict[str, LoadCombination]
